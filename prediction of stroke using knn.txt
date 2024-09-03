@@ -1,0 +1,175 @@
+Dhushyanth Gowda J
+Dept of ISE
+Sapthagiri college of engineering
+
+
+
+Here is the python program developed for the prediction of stroke using the KNN algorithm:
+
+
+program code:
+
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
+import tkinter as tk
+from tkinter import messagebox, ttk
+
+# Load the dataset
+df = pd.read_csv("healthcare-dataset-stroke-data.csv")
+
+# Impute missing values in the bmi column with the median
+df['bmi'].fillna(df['bmi'].median(), inplace=True)
+
+# Separate the features and target
+X = df.drop("stroke", axis=1)
+y = df["stroke"]
+
+# Create LabelEncoder objects for each categorical feature
+le_gender = LabelEncoder()
+le_ever_married = LabelEncoder()
+le_work_type = LabelEncoder()
+le_residence_type = LabelEncoder()
+le_smoking_status = LabelEncoder()
+
+# Apply the LabelEncoder to the categorical columns
+X['gender'] = le_gender.fit_transform(X['gender'])
+X['ever_married'] = le_ever_married.fit_transform(X['ever_married'])
+X['work_type'] = le_work_type.fit_transform(X['work_type'])
+X['Residence_type'] = le_residence_type.fit_transform(X['Residence_type'])
+X['smoking_status'] = le_smoking_status.fit_transform(X['smoking_status'])
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Use SMOTE to balance the classes in the training set
+smote = SMOTE(random_state=42)
+X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
+
+# Create a StandardScaler object
+scaler = StandardScaler()
+
+# Scale the data, excluding the 'id' column
+X_train_scaled = scaler.fit_transform(X_train_resampled.drop('id', axis=1))
+X_test_scaled = scaler.transform(X_test.drop('id', axis=1))
+
+# Create a KNeighborsClassifier object
+knn = KNeighborsClassifier(n_neighbors=5)
+
+# Train the model
+knn.fit(X_train_scaled, y_train_resampled)
+
+# Function to predict stroke based on user input
+def predict_stroke():
+    try:
+        # Get user inputs from the GUI entries
+        id_value = int(entry_id.get())
+        gender = le_gender.transform([combo_gender.get()])[0]
+        age = float(entry_age.get())
+        hypertension = int(combo_hypertension.get())
+        heart_disease = int(combo_heart_disease.get())
+        ever_married = le_ever_married.transform([combo_ever_married.get()])[0]
+        work_type = le_work_type.transform([combo_work_type.get()])[0]
+        residence_type = le_residence_type.transform([combo_residence_type.get()])[0]
+        avg_glucose_level = float(entry_avg_glucose_level.get())
+        bmi = float(entry_bmi.get())
+        smoking_status = le_smoking_status.transform([combo_smoking_status.get()])[0]
+        
+        # Create a DataFrame for new data
+        new_data = pd.DataFrame({
+            'id': [id_value],
+            'gender': [gender], 
+            'age': [age], 
+            'hypertension': [hypertension], 
+            'heart_disease': [heart_disease], 
+            'ever_married': [ever_married], 
+            'work_type': [work_type], 
+            'Residence_type': [residence_type], 
+            'avg_glucose_level': [avg_glucose_level], 
+            'bmi': [bmi], 
+            'smoking_status': [smoking_status]
+        })
+        
+        # Scale the new data using the same StandardScaler as during training
+        new_data_scaled = scaler.transform(new_data.drop('id', axis=1))
+        
+        # Make a prediction
+        prediction = knn.predict(new_data_scaled)[0]
+        
+        # Display prediction result
+        risk = "1  High risk of stroke " if prediction == 1 else "0  Low risk of stroke "
+        messagebox.showinfo("Prediction Result", f"The predicted stroke outcome is: {risk}")
+    
+    except ValueError as e:
+        messagebox.showerror("Error", f"Invalid input: {e}")
+
+# Create a tkinter GUI window
+window = tk.Tk()
+window.title("Stroke Prediction")
+window.configure(bg="light blue")
+
+# Set common style for all labels and entries
+font_style = ("Arial", 14)
+
+# Define the width for the entry fields and comboboxes
+entry_width = 20
+
+# Create a grid configuration to make the input fields equal size
+for i in range(11):
+    window.grid_rowconfigure(i, weight=1)
+    window.grid_columnconfigure(i, weight=1)
+
+# Create labels and entry fields for user input
+tk.Label(window, text="ID:", font=font_style, bg="light blue").grid(row=0, column=0, sticky='E', padx=10, pady=5)
+entry_id = tk.Entry(window, font=font_style, width=entry_width)
+entry_id.grid(row=0, column=1, padx=10, pady=5, sticky='W')
+
+tk.Label(window, text="Gender:", font=font_style, bg="light blue").grid(row=1, column=0, sticky='E', padx=10, pady=5)
+combo_gender = ttk.Combobox(window, values=["Male", "Female"], font=font_style, width=entry_width)
+combo_gender.grid(row=1, column=1, padx=10, pady=5, sticky='W')
+
+tk.Label(window, text="Age:", font=font_style, bg="light blue").grid(row=2, column=0, sticky='E', padx=10, pady=5)
+entry_age = tk.Entry(window, font=font_style, width=entry_width)
+entry_age.grid(row=2, column=1, padx=10, pady=5, sticky='W')
+
+tk.Label(window, text="Hypertension:", font=font_style, bg="light blue").grid(row=3, column=0, sticky='E', padx=10, pady=5)
+combo_hypertension = ttk.Combobox(window, values=[0, 1], font=font_style, width=entry_width)
+combo_hypertension.grid(row=3, column=1, padx=10, pady=5, sticky='W')
+
+tk.Label(window, text="Heart Disease:", font=font_style, bg="light blue").grid(row=4, column=0, sticky='E', padx=10, pady=5)
+combo_heart_disease = ttk.Combobox(window, values=[0, 1], font=font_style, width=entry_width)
+combo_heart_disease.grid(row=4, column=1, padx=10, pady=5, sticky='W')
+
+tk.Label(window, text="Ever Married:", font=font_style, bg="light blue").grid(row=5, column=0, sticky='E', padx=10, pady=5)
+combo_ever_married = ttk.Combobox(window, values=["Yes", "No"], font=font_style, width=entry_width)
+combo_ever_married.grid(row=5, column=1, padx=10, pady=5, sticky='W')
+
+tk.Label(window, text="Work Type:", font=font_style, bg="light blue").grid(row=6, column=0, sticky='E', padx=10, pady=5)
+combo_work_type = ttk.Combobox(window, values=["Private", "Self-employed", "Govt_job", "children", "Never_worked"], font=font_style, width=entry_width)
+combo_work_type.grid(row=6, column=1, padx=10, pady=5, sticky='W')
+
+tk.Label(window, text="Residence Type:", font=font_style, bg="light blue").grid(row=7, column=0, sticky='E', padx=10, pady=5)
+combo_residence_type = ttk.Combobox(window, values=["Urban", "Rural"], font=font_style, width=entry_width)
+combo_residence_type.grid(row=7, column=1, padx=10, pady=5, sticky='W')
+
+tk.Label(window, text="Average Glucose Level:", font=font_style, bg="light blue").grid(row=8, column=0, sticky='E', padx=10, pady=5)
+entry_avg_glucose_level = tk.Entry(window, font=font_style, width=entry_width)
+entry_avg_glucose_level.grid(row=8, column=1, padx=10, pady=5, sticky='W')
+
+tk.Label(window, text="BMI:", font=font_style, bg="light blue").grid(row=9, column=0, sticky='E', padx=10, pady=5)
+entry_bmi = tk.Entry(window, font=font_style, width=entry_width)
+entry_bmi.grid(row=9, column=1, padx=10, pady=5, sticky='W')
+
+tk.Label(window, text="Smoking Status:", font=font_style, bg="light blue").grid(row=10, column=0, sticky='E', padx=10, pady=5)
+combo_smoking_status = ttk.Combobox(window, values=["formerly smoked", "never smoked", "smokes", "Unknown"], font=font_style, width=entry_width)
+combo_smoking_status.grid(row=10, column=1, padx=10, pady=5, sticky='W')
+
+# Create predict button
+predict_button = tk.Button(window, text="Predict", command=predict_stroke, font=font_style)
+predict_button.grid(row=11, column=0, columnspan=2, pady=10)
+
+# Run the tkinter event loop
+window.mainloop()
+
